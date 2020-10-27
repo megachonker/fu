@@ -1,6 +1,6 @@
 #!/bin/bash
-#script fu sion
-# Version 2
+#script fu  sion
+# Version 1
 
 clear
 
@@ -52,10 +52,10 @@ else
                 ffmpeg \
                 -i "${listeHD[parcoure]}" \
                 -i "${listeSD[parcoure]}" \
-                -map 0:v -map 1:a -map 1:s -map_chapters 0 \
+                -map 0:v -map 1 -map -1:v \
                 -metadata title="$output $((1+$parcoure))" \
                 -metadata description="audio transcodée... thank to ffmpeg" \
-                -c copy \
+                -c copy -max_interleave_delta 0\
                 -hide_banner -loglevel info "$writeto"
 
         done
