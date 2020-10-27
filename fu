@@ -1,51 +1,62 @@
 #!/bin/bash
-#script fu  sion
-# Version 1
+#script fu sion
+# Version 2
 
 clear
 
+#message d'erreur par défaut
 erreur(){
-	echo
-	echo -e '\033[4;33;1msyntax:\033[0m'
-	echo -e '\033[3;32;1m fu\033[1;37;1m [DossierVideoHD] [DossierVideoSD] \033[0m'
+        echo
+        echo -e '\033[4;33;1msyntax:\033[0m'
+        echo -e '\033[3;32;1m fu\033[1;37;1m [DossierVideoHD] [DossierVideoSD] \033[0m'
 }
 
+#verifie repertoire accesible
 validarg(){
-	if [ ! -d "$1" ]; then
-		echo "le dossier "$1" de  destination  n'existe pas :"
-		erreur
-		exit
-	fi
+        if [ ! -d "$1" ]; then
+                echo "le dossier "$1" de  destination  n'existe pas :"
+                erreur
+                exit
+        fi
 }
 
-#fichiertolist(){
-#echo  $1 
-#$2
-#$1=.
-#echo  $1
-#	for fichier in $1*; do listeHD+=($fichier); done
-#}
-
+#si il n'y a pas d'argument
 if [ "$#" = "0" ]; then
-	echo pas dargument
-	erreur
+        echo pas dargument
+        erreur
 else
-	validarg $1
-	validarg $2
-	for fichier in $1*; do listeHD+=("$fichier"); done
-	for fichier in $2*; do listeSD+=("$fichier"); done
+        #on vérifie que les argument rentrée sont bon
+        validarg "$1"
+        validarg "$2"
 
-	#fichiertolist $1 listeHD
-	#fichiertolist $2 listeSD
-	
-	#fichier a  covertire
+        #charge tout les fichier dans une liste
+        for fichier in "$1"*; do listeHD+=("$fichier"); done
+        for fichier in "$2"*; do listeSD+=("$fichier"); done
 
-	#echo ${listeHD[*]}
-	#echo ${listeSD[*]}
+        ##DEBUG##
+        #liste des fichier
+        echo -e '\e[4mDossier HD ('$1') :\e[0m\n'
+        for i  in "${listeHD[@]}"; do  echo "$i"; done
+        echo -e '\e[4mDossier SD ('$2') :\e[0m\n'
+        for i  in "${listeSD[@]}"; do  echo "$i"; done
+        #variable output
+        output="$(echo $2|tr -d /)"
+        echo -e "\e[4mOutput = $output\e[0m\n"
+        mkdir "$output.OUT" 2> /dev/null
+#libopus
+        for parcoure in ${!listeHD[@]};
+        do
+                writeto="$output.OUT/$(echo ${listeSD[parcoure]}|cut -d "/" -f 2|rev|cut -d "." -f 2-|rev).mkv"
+                echo -e "\n\e[4mFichier en cour => $writeto\e[0m\n"
+                #convetion
+                ffmpeg \
+                -i "${listeHD[parcoure]}" \
+                -i "${listeSD[parcoure]}" \
+                -map 0:v -map 1:a -map 1:s -map_chapters 0 \
+                -metadata title="$output $((1+$parcoure))" \
+                -metadata description="audio transcodée... thank to ffmpeg" \
+                -c copy \
+                -hide_banner -loglevel info "$writeto"
 
-	output="$(echo $1|tr -d /)"
-	mkdir "$output.OUT"
-#libopus	
-	for parcoure in ${!listeHD[@]}; do ffmpeg -i "${listeHD[parcoure]}" -i "${listeSD[parcoure]}" -map 0 -map 1 -map -1:v -metadata title="$output $((1+$parcoure))" -metadata description="audio transcodée... thank to ffmpeg" -codec:v copy  -codec:a libopus "$output.OUT/$output $((1+$parcoure)).mkv"; done
-	
+        done
 fi
